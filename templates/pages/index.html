@@ -1,0 +1,113 @@
+{% extends "base/base.html" %}
+{% load static mptt_tags %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    <h2 class="text-center my-4">Структура компании</h2>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    <div id="tree" class="page-content"></div>
+                </div>
+                <div>
+
+                    {% comment %}{% recursetree departments %}
+                        <div>
+                            <h3>{{ node.name }}</h3>
+                            <div>
+                                {% for staff in node.staff_set.all %}
+                                    <div class="staff">{{ staff.full_name }}</div>
+                                {% empty %}
+                                    <div class="staff">Сотрудников не найдено</div>
+                                {% endfor %}
+                            </div>
+
+                            {% if not node.is_leaf_node %}
+                                <ul class="children">
+                                    {{ children }}
+                                </ul>
+                            {% endif %}
+
+                        </div>
+                    {% endrecursetree %}{% endcomment %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+    const structure = [
+
+        {% recursetree departments %}
+            {
+                "head": '{{ node.name }}',
+                "id": {{ node.id }},
+                "contents": `{% for staff in node.staff_set.all %}<span data-bs-toggle="tooltip" data-bs-placement="auto" title="{{ staff.get_user_data }}">{{ staff.full_name }}</span><hr>{% endfor %} <span class='staff-list-collapse-btn'></span>`,
+
+                {% if not node.is_leaf_node %}
+                    "children": [
+                        {{ children }}
+                    ]
+                {% endif %}
+            },
+        {% endrecursetree %}
+
+    ]
+
+    $("#tree").jHTree({
+        callType: 'obj',
+        structureObj: structure,
+        zoomer: false,
+        nodeDropComplete: function (event, data) {
+            //----- Do Something @ Server side or client side -----------
+            alert("Node ID: " + data.nodeId + " Parent Node ID: " + data.parentNodeId);
+            //-----------------------------------------------------------
+        }
+    });
+
+    $('.staff-list-collapse-btn').on('click', function (e) {
+        if ($(e.target).data('is-collapsed') === true) {
+            $(e.target).parent().css('height', 'inherit');
+            $(e.target).parent().css('overflow', 'inherit');
+            $(e.target).parent().css('transition', '.2s');
+            $(e.target).data('is-collapsed', false)
+            $(e.target).appendTo(e.target.parentElement)
+        } else {
+            $(e.target).parent().css('height', '15px');
+            $(e.target).parent().css('overflow', 'hidden');
+            $(e.target).parent().css('transition', '.2s');
+            $(e.target).data('is-collapsed', true)
+            $(e.target).prependTo(e.target.parentElement)
+        }
+        console.log('123')
+    })
+
+    </script>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .staff-list-collapse-btn {
+            height: 12.5px;
+            background: orange;
+            width: 100%;
+            display: block;
+            margin: 0;
+        }
+
+        .page-content {
+            max-width: 92.5%;
+            border: 1px solid orange;
+            overflow: scroll;
+        }
+    </style>
+{% endblock %}
